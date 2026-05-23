@@ -1,55 +1,25 @@
 export default {
-  async fetch(request, env) {
-    try {
-      const TARGET = env.TARGET_DOMAIN;
+  async fetch(request) {
+    const url = new URL(request.url);
 
-      if (!TARGET) {
-        return new Response("Missing TARGET_DOMAIN", { status: 500 });
-      }
-
-      const url = new URL(request.url);
-
-      // فقط این مسیر را قبول کن
-      const PATH = "/cdn-a8x29q";
-
-      if (!url.pathname.startsWith(PATH)) {
-        return new Response("Not Found", { status: 404 });
-      }
-
-      const origin = new URL(TARGET);
-
-      // مسیر + query کامل منتقل می‌شود
-      const targetUrl =
-        origin.origin +
-        url.pathname +
-        url.search;
-
-      const headers = new Headers(request.headers);
-
-      // حذف header های مشکل‌ساز
-      headers.delete("host");
-      headers.delete("cf-connecting-ip");
-      headers.delete("cf-ray");
-
-      const response = await fetch(targetUrl, {
-        method: request.method,
-        headers,
-        body:
-          request.method === "GET" || request.method === "HEAD"
-            ? undefined
-            : request.body,
-        redirect: "manual",
-      });
-
-      return new Response(response.body, {
-        status: response.status,
-        headers: response.headers,
-      });
-
-    } catch (err) {
-      return new Response("Worker Error: " + err.message, {
-        status: 500,
-      });
+    // فقط مسیر موردنظر
+    if (url.pathname !== "/cdn-a8x29q") {
+      return new Response("Not Found", { status: 404 });
     }
+
+    // WebSocket check
+    const upgradeHeader = request.headers.get("Upgrade");
+    if (upgradeHeader !== "websocket") {
+      return new Response("Expected WebSocket", { status: 400 });
+    }
+
+    // مقصد واقعی (origin)
+    const target = "https://a.cdnconnect.site/cdn-a8x29q";
+
+    // کل handshake را pass-through کن
+    return fetch(target, {
+      method: request.method,
+      headers: request.headers,
+    });
   }
 };
