@@ -1,9 +1,6 @@
-name = "xhttp-fdr"
-main = "worker.js"
-compatibility_date = "2024-01-01"
 name = "cloudflare-tunnel-fdr"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-TARGET_DOMAIN = "https://a.cdnconnect.site"
+TARGET_DOMAIN = "https://direct.cdnconnect.site:8443"
