@@ -3,4 +3,4 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-TARGET_DOMAIN = "https://direct.cdnconnect.site:8443"
+TARGET_DOMAIN = "https://brad.cdnconnect.site:8443"
