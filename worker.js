@@ -1,26 +1,34 @@
 export default {
- async fetch(request, env) {
-   const TARGET = (env.TARGET_DOMAIN || "").replace(/\/$/, "");
+  async fetch(request, env) {
+    const target = new URL(env.TARGET_DOMAIN);
+    const incoming = new URL(request.url);
 
-   if (!TARGET) {
-     return new Response("Missing TARGET_DOMAIN", { status: 500 });
-   }
+    // مسیر و Query همان چیزی باشد که V2Box فرستاده
+    target.pathname = incoming.pathname;
+    target.search = incoming.search;
 
-   const url = new URL(request.url);
-   const targetUrl = TARGET + url.pathname + url.search;
+    // کپی Request برای ارسال به Origin
+    const headers = new Headers(request.headers);
 
-   const newHeaders = new Headers(request.headers);
-   newHeaders.set("host", new URL(TARGET).hostname);
-   newHeaders.delete("cf-connecting-ip");
-   newHeaders.delete("x-forwarded-for");
-   newHeaders.delete("x-real-ip");
+    // هدرهای IP مربوط به Cloudflare را حذف کن
+    headers.delete("cf-connecting-ip");
+    headers.delete("x-forwarded-for");
+    headers.delete("x-real-ip");
 
-   return fetch(targetUrl, {
-     method: request.method,
-     headers: newHeaders,
-     body: request.method === "GET" || request.method === "HEAD"
-       ? undefined
-       : request.body,
-   });
- }
+    try {
+      return await fetch(target.toString(), {
+        method: request.method,
+        headers,
+        body:
+          request.method === "GET" || request.method === "HEAD"
+            ? undefined
+            : request.body,
+      });
+    } catch (err) {
+      return new Response(
+        `Origin error: ${err?.message || String(err)}`,
+        { status: 502 }
+      );
+    }
+  },
 };
